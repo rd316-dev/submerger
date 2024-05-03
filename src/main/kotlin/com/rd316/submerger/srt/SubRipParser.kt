@@ -1,54 +1,69 @@
 package com.rd316.submerger.srt
 
-class SubRipParser {
+import java.time.LocalTime
 
-    @OptIn(ExperimentalStdlibApi::class)
-    fun parse(data: String): SubRipFile {
-        val events = ArrayList<SubRipEvent>()
+class SubRipParser private constructor() {
 
-        var state = 0
+    companion object {
+        fun parse(data: String): SubRipFile {
+            val events = ArrayList<SubRipEvent>()
 
-        var eventNumber = 0
-        var eventStart = ""
-        var eventEnd = ""
-        var text = ""
+            var state = 0
 
-        var lineNumber = 0
+            var eventNumber = 0
+            var eventStart = ""
+            var eventEnd = ""
+            var text = ""
 
-        for (l in data.removePrefix("\uFEFF").lines()) {
-            lineNumber++
-            if (l.isBlank()) {
-                if (state == 2) {
-                    events.add(SubRipEvent(eventNumber, eventStart, eventEnd, text.trim()))
+            var lineNumber = 0
 
-                    eventNumber = 0
-                    eventStart = ""
-                    eventEnd = ""
-                    text = ""
+            for (l in data.removePrefix("\uFEFF").lines()) {
+                lineNumber++
+                if (l.isBlank()) {
+                    if (state == 2) {
+                        events.add(
+                            SubRipEvent(
+                                eventNumber,
+                                LocalTime.parse(eventStart.replace(",", ".")),
+                                LocalTime.parse(eventEnd.replace(",", ".")),
+                                text.trim()
+                            )
+                        )
+
+                        eventNumber = 0
+                        eventStart = ""
+                        eventEnd = ""
+                        text = ""
+                    }
+
+                    state = 0
+                    continue
                 }
 
-                state = 0
-                continue
-            }
+                when (state) {
+                    0 -> {
+                        eventNumber =
+                            l.toIntOrNull() ?: throw IllegalArgumentException("[$lineNumber]: \"$l\" is not a number")
+                        state++
+                    }
 
-            when (state) {
-                0 -> {
-                    eventNumber = l.toIntOrNull() ?: throw IllegalArgumentException("[$lineNumber]: \"$l\" is not a number")
-                    state++
-                } 1 -> {
-                    val tokens = l.split("-->")
-                    eventStart = tokens[0].trim()
-                    eventEnd = tokens[1].trim()
-                    state++
-                } 2 -> {
-                    if (text.isNotBlank())
-                        text += '\n'
-                    text += l
+                    1 -> {
+                        val tokens = l.split("-->")
+                        eventStart = tokens[0].trim()
+                        eventEnd = tokens[1].trim()
+                        state++
+                    }
+
+                    2 -> {
+                        if (text.isNotBlank())
+                            text += '\n'
+                        text += l
+                    }
                 }
             }
+
+            return SubRipFile(events)
         }
-
-        return SubRipFile(events)
     }
 
 }
