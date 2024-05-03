@@ -1,83 +1,98 @@
 package com.rd316.submerger.ssa
 
-class SSAParser {
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
-    fun parseStyle(line: String, format: List<String>) : SSAStyle {
-        val map = HashMap<String, String>()
+class SSAParser private constructor() {
+    companion object {
+        val FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("H:mm:ss.SS")
 
-        val fields = line.split(",")
-        val fieldIterator = fields.iterator()
+        private fun parseStyle(line: String, format: List<String>): SSAStyle {
+            val map = HashMap<String, String>()
 
-        for (fieldName in format) {
-            if (!fieldIterator.hasNext())
-                throw IllegalArgumentException("Style field $fieldName not found")
+            val fields = line.split(",")
+            val fieldIterator = fields.iterator()
 
-            map[fieldName] = fieldIterator.next()
-        }
+            for (fieldName in format) {
+                if (!fieldIterator.hasNext())
+                    throw IllegalArgumentException("Style field $fieldName not found")
 
-        return SSAStyle(map)
-    }
-
-    fun parseEvent(line: String, format: List<String>) : SSAEvent {
-        val map = HashMap<String, String>()
-
-        val fields = line.split(",")
-        val fieldIterator = fields.iterator()
-
-        for (fieldName in format) {
-            if (!fieldIterator.hasNext())
-                throw IllegalArgumentException("Event field $fieldName not found")
-
-            map[fieldName] = fieldIterator.next()
-        }
-
-        return SSAEvent(map)
-    }
-
-    fun parse(data: String): SSAFile {
-        val scriptInfo = HashMap<String, String>()
-
-        val styleFormat = ArrayList<String>()
-        val eventFormat = ArrayList<String>()
-
-        val styles = ArrayList<SSAStyle>()
-        val events = ArrayList<SSAEvent>()
-
-        var section = ""
-        var lineNumber = 0
-        for (l in data.removePrefix("\uFEFF").lines()) {
-            lineNumber++
-
-            if (l.isBlank() || l.startsWith(";")) continue
-            if (l.startsWith("[")) {
-                section = l.removePrefix("[").removeSuffix("]")
-                continue
+                map[fieldName] = fieldIterator.next()
             }
 
-            val firstColon = l.indexOfFirst { c -> c == ':' }
+            return SSAStyle(map)
+        }
 
-            val descriptor = l.substring(0, firstColon)
-            val value = l.substring(firstColon + 1, l.length).trim()
+        private fun parseEvent(line: String, format: List<String>): SSAEvent {
+            val map = HashMap<String, String>()
 
-            when (section.lowercase()) {
-                "script info" -> {
-                    scriptInfo[descriptor] = value
-                } "v4 styles", "v4+ styles" -> {
-                    when (descriptor.lowercase()) {
-                        "format" -> styleFormat.addAll(value.split(",").map { f -> f.trim() })
-                        "style" -> styles.add(parseStyle(value, styleFormat))
-                        else -> throw IllegalArgumentException("[$lineNumber]: Invalid descriptor in $section section: $descriptor")
+            val fields = line.split(",")
+            val fieldIterator = fields.iterator()
+
+            for (fieldName in format) {
+                if (!fieldIterator.hasNext())
+                    throw IllegalArgumentException("Event field $fieldName not found")
+
+                map[fieldName] = fieldIterator.next()
+            }
+
+            return SSAEvent(
+                Integer.parseInt(map["Layer"] ?: "0"),
+                LocalTime.parse(map["Start"] ?: throw IllegalArgumentException("Event doesn't have Start field"), FORMATTER),
+                LocalTime.parse(map["End"] ?: throw IllegalArgumentException("Event doesn't have End field"), FORMATTER),
+                map["Style"] ?: "",
+                map["Name"] ?: "",
+                Integer.parseInt(map["MarginL"] ?: "0"),
+                Integer.parseInt(map["MarginR"] ?: "0"),
+                Integer.parseInt(map["MarginV"] ?: "0"),
+                map["Effect"] ?: "",
+                map["Text"] ?: throw IllegalArgumentException("Event doesn't have Text field"),
+            )
+        }
+
+        fun parse(data: String): SSAFile {
+            val ssaFile = SSAFile()
+
+            var section = ""
+            var lineNumber = 0
+            for (l in data.removePrefix("\uFEFF").lines()) {
+                lineNumber++
+
+                if (l.isBlank() || l.startsWith(";")) continue
+                if (l.startsWith("[")) {
+                    section = l.removePrefix("[").removeSuffix("]")
+                    continue
+                }
+
+                val firstColon = l.indexOfFirst { c -> c == ':' }
+
+                val descriptor = l.substring(0, firstColon)
+                val value = l.substring(firstColon + 1, l.length).trim()
+
+                when (section.lowercase()) {
+                    "script info" -> {
+                        ssaFile.scriptInfo.add(Pair(descriptor, value))
                     }
-                } "events" -> {
-                    when (descriptor.lowercase()) {
-                        "format" -> eventFormat.addAll(value.split(",").map { f -> f.trim() })
-                        "dialogue" -> events.add(parseEvent(value, eventFormat))
+
+                    "v4 styles", "v4+ styles" -> {
+                        when (descriptor.lowercase()) {
+                            "format" -> ssaFile.styleFormat.addAll(value.split(",").map { f -> f.trim() })
+                            "style" -> ssaFile.styles.add(parseStyle(value, ssaFile.styleFormat))
+                            else -> throw IllegalArgumentException("[$lineNumber]: Invalid descriptor in $section section: $descriptor")
+                        }
+                    }
+
+                    "events" -> {
+                        when (descriptor.lowercase()) {
+                            "format" -> ssaFile.eventFormat.addAll(value.split(",").map { f -> f.trim() })
+                            "dialogue" -> ssaFile.events.add(parseEvent(value, ssaFile.eventFormat))
+                        }
                     }
                 }
             }
-        }
 
-        return SSAFile(scriptInfo, styleFormat, eventFormat, styles, events)
+            return ssaFile
+        }
     }
 
 }
