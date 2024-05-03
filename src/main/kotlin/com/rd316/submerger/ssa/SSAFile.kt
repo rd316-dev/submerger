@@ -1,9 +1,9 @@
 package com.rd316.submerger.ssa
 
-data class SSAFile(
-    val scriptInfo  : Map<String, String>,
-    val styleFormat : List<String>,
-    val eventFormat : List<String>,
-    val styles      : List<SSAStyle>,
-    val events      : List<SSAEvent>
-)
+class SSAFile {
+    val scriptInfo  = ArrayList<Pair<String, String>>()
+    val styleFormat = ArrayList<String>()
+    val eventFormat = ArrayList<String>()
+    val styles      = ArrayList<SSAStyle>()
+    val events      = ArrayList<SSAEvent>()
+}
