@@ -45,7 +45,7 @@ class SSAParser {
 
         var section = ""
         var lineNumber = 0
-        for (l in data.lines()) {
+        for (l in data.removePrefix("\uFEFF").lines()) {
             lineNumber++
 
             if (l.isBlank() || l.startsWith(";")) continue
