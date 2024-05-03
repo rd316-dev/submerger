@@ -1,4 +1,4 @@
-package com.rd316
+package com.rd316.submerger.ssa
 
 class SSAParser {
 

@@ -1,4 +1,4 @@
-package com.rd316
+package com.rd316.submerger.ssa
 
 data class SSAEvent(
     val fields: Map<String, String>
