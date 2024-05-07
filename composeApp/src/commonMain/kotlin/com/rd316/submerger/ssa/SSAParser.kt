@@ -51,10 +51,15 @@ class SSAParser private constructor() {
         }
 
         fun parse(data: String): SSAFile {
-            val ssaFile = SSAFile()
-
             var section = ""
             var lineNumber = 0
+
+            val scriptInfo = mutableListOf<Pair<String, String>>()
+            val styleFormat = mutableListOf<String>()
+            val eventFormat = mutableListOf<String>()
+            val styles = mutableListOf<SSAStyle>()
+            val events = mutableListOf<SSAEvent>()
+
             for (l in data.removePrefix("\uFEFF").lines()) {
                 lineNumber++
 
@@ -71,27 +76,33 @@ class SSAParser private constructor() {
 
                 when (section.lowercase()) {
                     "script info" -> {
-                        ssaFile.scriptInfo.add(Pair(descriptor, value))
+                        scriptInfo.add(Pair(descriptor, value))
                     }
 
                     "v4 styles", "v4+ styles" -> {
                         when (descriptor.lowercase()) {
-                            "format" -> ssaFile.styleFormat.addAll(value.split(",").map { f -> f.trim() })
-                            "style" -> ssaFile.styles.add(parseStyle(value, ssaFile.styleFormat))
+                            "format" -> styleFormat.addAll(value.split(",").map { f -> f.trim() })
+                            "style" -> styles.add(parseStyle(value, styleFormat))
                             else -> throw IllegalArgumentException("[$lineNumber]: Invalid descriptor in $section section: $descriptor")
                         }
                     }
 
                     "events" -> {
                         when (descriptor.lowercase()) {
-                            "format" -> ssaFile.eventFormat.addAll(value.split(",").map { f -> f.trim() })
-                            "dialogue" -> ssaFile.events.add(parseEvent(value, ssaFile.eventFormat))
+                            "format" -> eventFormat.addAll(value.split(",").map { f -> f.trim() })
+                            "dialogue" -> events.add(parseEvent(value, eventFormat))
                         }
                     }
                 }
             }
 
-            return ssaFile
+            return SSAFile(
+                scriptInfo = scriptInfo,
+                styleFormat = styleFormat,
+                eventFormat = eventFormat,
+                styles = styles,
+                events = events
+            )
         }
     }
 
