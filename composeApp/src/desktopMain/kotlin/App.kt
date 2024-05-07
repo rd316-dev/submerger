@@ -139,65 +139,9 @@ fun App(parent: ComposePanel) {
                         modifier = Modifier
                             .width((panelDimension.width / 2).dp - (outerPadding * 2))
                             .padding(bottom = 15.dp),
-                        onAddFilesClicked = {
-                            val dialog = JFileChooser()
-                            dialog.isMultiSelectionEnabled = true
-                            dialog.fileSelectionMode = JFileChooser.FILES_ONLY
-
-                            val result = dialog.showOpenDialog(parent)
-                            if (result != JFileChooser.APPROVE_OPTION)
-                                return@SubtitleSetCard false
-
-                            val present = HashSet<String>()
-                            val newFiles = set.files.toMutableList()
-                            present.addAll(set.files.filterNotNull())
-                            dialog.selectedFiles.forEach { f ->
-                                if (present.add(f.path))
-                                    newFiles.add(f.path)
-                            }
-
-                            subtitleSets[setIndex] = set.copy(files = newFiles)
-
-                            return@SubtitleSetCard true
-                        },
-                        onOffsetChanged = { offset ->
-                            subtitleSets[setIndex] = set.copy(offset = offset)
-                        },
-                        onAddBlankClicked = { selectedIndex ->
-                            val newFiles = set.files.toMutableList()
-
-                            if (selectedIndex != -1)
-                                newFiles.add(selectedIndex, null)
-                            else
-                                newFiles.add(0, null)
-
-                            subtitleSets[setIndex] = set.copy(files = newFiles)
-                        },
-                        onMoveUpClicked = { selectedIndex ->
-                            if (selectedIndex > 0) {
-                                val newFiles = set.files.toMutableList()
-                                val item = newFiles[selectedIndex]
-                                newFiles.removeAt(selectedIndex)
-                                newFiles.add(selectedIndex - 1, item)
-
-                                subtitleSets[setIndex] = set.copy(files = newFiles)
-                            }
-                        },
-                        onMoveDownClicked = { selectedIndex ->
-                            if (selectedIndex < set.files.size - 1) {
-                                val newFiles = set.files.toMutableList()
-                                val item = newFiles[selectedIndex]
-                                newFiles.removeAt(selectedIndex)
-                                newFiles.add(selectedIndex + 1, item)
-
-                                subtitleSets[setIndex] = set.copy(files = newFiles)
-                            }
-                        },
-                        onDeleteClicked = { selectedIndex ->
-                            val newFiles = set.files.toMutableList()
-                            newFiles.removeAt(selectedIndex)
-
-                            subtitleSets[setIndex] = set.copy(files = newFiles)
+                        parent = parent,
+                        onSetChanged = { newSet ->
+                            subtitleSets[setIndex] = newSet
                         }
                     )
                 }
@@ -221,13 +165,9 @@ fun SubtitleSetCard(
     index: Int,
     set: SubtitleSet,
     availableStyles: List<String>,
+    parent: ComposePanel,
     modifier: Modifier = Modifier,
-    onAddFilesClicked: () -> Boolean,
-    onOffsetChanged: (Int) -> Unit,
-    onAddBlankClicked: (Int) -> Unit,
-    onMoveUpClicked: (Int) -> Unit,
-    onMoveDownClicked: (Int) -> Unit,
-    onDeleteClicked: (Int) -> Unit
+    onSetChanged: (SubtitleSet) -> Unit
 ) {
     Column(modifier = modifier) {
         Row(
@@ -245,8 +185,24 @@ fun SubtitleSetCard(
                     Text("Set ${index + 1}")
                     Spacer(modifier = Modifier.weight(1.0f))
                     TextButton(onClick = {
-                        if (onAddFilesClicked())
-                            isEmpty = false
+                        val dialog = JFileChooser()
+                        dialog.isMultiSelectionEnabled = true
+                        dialog.fileSelectionMode = JFileChooser.FILES_ONLY
+
+                        val result = dialog.showOpenDialog(parent)
+                        if (result != JFileChooser.APPROVE_OPTION)
+                            return@TextButton
+
+                        val present = HashSet<String>()
+                        val newFiles = set.files.toMutableList()
+                        present.addAll(set.files.filterNotNull())
+                        dialog.selectedFiles.forEach { f ->
+                            if (present.add(f.path))
+                                newFiles.add(f.path)
+                        }
+
+                        onSetChanged(set.copy(files = newFiles))
+                        isEmpty = false
                     }) {
                         Text("Add files")
                     }
@@ -315,11 +271,9 @@ fun SubtitleSetCard(
                         onValueChange = { newValue ->
                             val newOffset = intFilter(offset, newValue, suffix = " ms")
 
-                            if (newOffset.first.text != offset.text) {
-                                onOffsetChanged(newOffset.second)
-                            }
-
                             offset = newOffset.first
+                            if (newOffset.first.text != offset.text)
+                                onSetChanged(set.copy(offset = newOffset.second))
                         }
                     )
                     Spacer(modifier = Modifier.weight(1.0f))
@@ -365,10 +319,17 @@ fun SubtitleSetCard(
                     contentPadding = PaddingValues(0.dp),
                     modifier = Modifier.size(30.dp).align(Alignment.CenterHorizontally),
                     onClick = {
-                        onAddBlankClicked(selectedIndex)
-                        if (selectedIndex != -1)
+                        val newFiles = set.files.toMutableList()
+
+                        if (selectedIndex != -1) {
+                            newFiles.add(selectedIndex, null)
                             selectedIndex++
+                        } else {
+                            newFiles.add(0, null)
+                        }
+
                         isEmpty = false
+                        onSetChanged(set.copy(files = newFiles))
                     }
                 ) {
                     Icon(Icons.Rounded.Add, contentDescription = "Add Blank")
@@ -380,9 +341,15 @@ fun SubtitleSetCard(
                         enabled = (selectedIndex != -1),
                         modifier = Modifier.size(30.dp).align(Alignment.CenterHorizontally),
                         onClick = {
-                            onMoveUpClicked(selectedIndex)
-                            if (selectedIndex > 0)
+                            if (selectedIndex > 0) {
+                                val newFiles = set.files.toMutableList()
+                                val item = newFiles[selectedIndex]
+                                newFiles.removeAt(selectedIndex)
+                                newFiles.add(selectedIndex - 1, item)
+
                                 selectedIndex -= 1
+                                onSetChanged(set.copy(files = newFiles))
+                            }
                         }
                     ) {
                         Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = "Move up")
@@ -393,9 +360,15 @@ fun SubtitleSetCard(
                         enabled = (selectedIndex != -1),
                         modifier = Modifier.size(30.dp).align(Alignment.CenterHorizontally),
                         onClick = {
-                            onMoveDownClicked(selectedIndex)
-                            if (selectedIndex < set.files.size - 1)
+                            if (selectedIndex < set.files.size - 1) {
+                                val newFiles = set.files.toMutableList()
+                                val item = newFiles[selectedIndex]
+                                newFiles.removeAt(selectedIndex)
+                                newFiles.add(selectedIndex + 1, item)
+
                                 selectedIndex += 1
+                                onSetChanged(set.copy(files = newFiles))
+                            }
                         }
                     ) {
                         Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = "Move down")
@@ -407,9 +380,13 @@ fun SubtitleSetCard(
                     enabled = (selectedIndex != -1),
                     modifier = Modifier.size(30.dp).align(Alignment.CenterHorizontally),
                     onClick = {
-                        onDeleteClicked(selectedIndex)
+                        val newFiles = set.files.toMutableList()
+                        newFiles.removeAt(selectedIndex)
+
                         selectedIndex = -1
-                        isEmpty = set.files.size <= 1
+                        isEmpty = newFiles.size <= 1
+
+                        onSetChanged(set.copy(files = newFiles))
                     }
                 ) {
                     Icon(Icons.Rounded.Delete, contentDescription = "Delete File")
