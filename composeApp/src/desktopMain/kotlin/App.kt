@@ -35,6 +35,7 @@ class ResizeListener(val onResize: (Dimension) -> Unit) : ComponentListener {
 @Composable
 fun App(parent: ComposePanel) {
     val outerPadding = 20.dp
+    val setGap = 10.dp
 
     var panelDimension by remember { mutableStateOf(parent.size) }
 
@@ -98,7 +99,6 @@ fun App(parent: ComposePanel) {
                 }
             }
 
-            val setGap = 10.dp
             HorizontalListBox(modifier = Modifier.weight(1.0f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 LaunchedEffect(formatFilename) {
                     if (formatFilename.isNotBlank()) {
