@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun HorizontalListBox(
     modifier: Modifier = Modifier,
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(10.dp),
     content: @Composable RowScope.() -> Unit
 ) {
     Box(modifier = modifier) {
@@ -17,7 +18,7 @@ fun HorizontalListBox(
         Box(modifier = Modifier.horizontalScroll(scrollState)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = horizontalArrangement,
             ) {
                 content()
             }
@@ -33,9 +34,10 @@ fun HorizontalListBox(
 fun <T> HorizontalListBox(
     data: Collection<T>,
     modifier: Modifier = Modifier,
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(10.dp),
     content: @Composable RowScope.(T) -> Unit
 ) {
-    HorizontalListBox(modifier) {
+    HorizontalListBox(modifier, horizontalArrangement) {
         for (i in data) {
             content(i)
         }
