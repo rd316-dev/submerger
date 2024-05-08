@@ -6,17 +6,17 @@ import javax.swing.WindowConstants
 
 fun main() = SwingUtilities.invokeLater {
     val window = JFrame()
-    val composePanel = ComposePanel()
+    window.setSize(800, 600)
+    window.setLocationRelativeTo(null)
 
     window.defaultCloseOperation = WindowConstants.EXIT_ON_CLOSE
     window.title = "SubMerger"
-    window.contentPane.add(composePanel, BorderLayout.CENTER)
 
+    val composePanel = ComposePanel()
     composePanel.setContent {
         App(composePanel)
     }
 
-    window.setSize(800, 600)
-    window.setLocationRelativeTo(null)
+    window.contentPane.add(composePanel, BorderLayout.CENTER)
     window.isVisible = true
 }
