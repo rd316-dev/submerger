@@ -111,7 +111,6 @@ fun App(parent: ComposePanel) {
                                 val set = subtitleSets[setIndex]
                                 val styleIndex = if (setIndex < styleNames.size) setIndex else (styleNames.size - 1)
                                 subtitleSets[setIndex] = set.copy(style = styleNames[styleIndex])
-                                println("assigned ${styleNames[styleIndex]} style to the set ${setIndex + 1}")
                             }
 
                             formatData = formatSSA
@@ -134,7 +133,6 @@ fun App(parent: ComposePanel) {
                             .padding(bottom = 15.dp),
                         onSetChanged = { newSet ->
                             subtitleSets[setIndex] = newSet
-                            println(newSet)
                         }
                     )
                 }
