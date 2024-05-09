@@ -145,8 +145,8 @@ fun SubtitleSetCard(
                     Text("Style: ")
                     ComboBox(
                         data = availableStyles,
-                        currentText = set.style ?: "None",
-                        onItemSelected = { style -> onSetChanged(set.copy(style = style)) },
+                        currentText = set.style,
+                        onItemSelected = { _, style -> onSetChanged(set.copy(style = style)) },
                         header = "Choose a style"
                     )
                 }
