@@ -2,7 +2,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,11 +21,11 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import component.ComboBox
 import component.LineField
 import component.VerticalListBox
 import data.SubtitleSet
@@ -43,11 +42,8 @@ fun SubtitleSetCard(
     modifier: Modifier = Modifier,
     onSetChanged: (SubtitleSet) -> Unit
 ) {
-    var isFileListEmpty = set.files.isEmpty()
-
     var selectedIndex by remember { mutableIntStateOf(-1) }
     var offset by remember { mutableStateOf(TextFieldValue("${set.offset} ms")) }
-    var styleMenuExpanded by remember { mutableStateOf(false) }
 
     Column(modifier = modifier) {
         Row(
@@ -151,39 +147,12 @@ fun SubtitleSetCard(
                     )
                     Spacer(modifier = Modifier.weight(1.0f))
                     Text("Style: ")
-                    ExposedDropdownMenuBox(
-                        modifier = Modifier.width(120.dp),
-                        expanded = styleMenuExpanded,
-                        onExpandedChange = { expanded ->
-                            styleMenuExpanded = expanded && availableStyles.isNotEmpty()
-                        }
-                    ) {
-                        OutlinedButton(onClick = {}, Modifier.width(120.dp)) {
-                            Text(set.style ?: "None")
-                        }
-                        ExposedDropdownMenu(
-                            expanded = styleMenuExpanded,
-                            onDismissRequest = { styleMenuExpanded = false }
-                        ) {
-                            Text("Choose a style", Modifier.padding(5.dp), fontWeight = FontWeight.Bold)
-                            Divider(modifier = Modifier.padding(top = 5.dp))
-
-                            for (style in availableStyles) {
-                                DropdownMenuItem(
-                                    modifier = Modifier,
-                                    enabled = true,
-                                    contentPadding = PaddingValues(5.dp),
-                                    interactionSource = MutableInteractionSource(),
-                                    onClick = {
-                                        styleMenuExpanded = false
-                                        onSetChanged(set.copy(style = style))
-                                    }
-                                ) {
-                                    Text(style)
-                                }
-                            }
-                        }
-                    }
+                    ComboBox(
+                        data = availableStyles,
+                        currentText = set.style ?: "None",
+                        onItemSelected = { style -> onSetChanged(set.copy(style = style)) },
+                        header = "Choose a style"
+                    )
                 }
             }
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
