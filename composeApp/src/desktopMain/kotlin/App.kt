@@ -10,6 +10,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.rd316.submerger.ssa.SSAFile
 import com.rd316.submerger.ssa.SSAParser
+import component.ComboBox
 import component.HorizontalListBox
 import component.LineField
 import data.SubtitleSet
@@ -19,7 +20,6 @@ import java.awt.Dimension
 import java.awt.event.ComponentEvent
 import java.awt.event.ComponentListener
 import java.io.FileReader
-import javax.swing.JFileChooser
 
 class ResizeListener(val onResize: (Dimension) -> Unit) : ComponentListener {
     override fun componentResized(e: ComponentEvent?) {
@@ -43,7 +43,8 @@ fun App(parent: ComposePanel) {
     var formatFilename by remember { mutableStateOf<String?>(null) }
     var formatData by remember { mutableStateOf<SSAFile?>(null) }
 
-    var syncThreshold by remember { mutableStateOf(TextFieldValue("500 ms")) }
+    var syncSet by remember { mutableStateOf<Int?>(null) }
+    var syncThreshold by remember { mutableIntStateOf(500) }
 
     val subtitleSets = remember { mutableStateListOf(
         SubtitleSet(
@@ -67,18 +68,11 @@ fun App(parent: ComposePanel) {
                 TextButton(onClick = { formatFilename = selectFile(parent) ?: formatFilename }) {
                     Text(formatFilename ?: "Open file")
                 }
-                Spacer(modifier = Modifier.weight(1.0f))
-                Text("Sync threshold: ")
-                LineField(
-                    value = syncThreshold,
-                    width = 80.dp,
-                    onValueChange = { newValue ->
-                        syncThreshold = intFilter(syncThreshold, newValue, suffix = " ms", min = 0, max = 10000).first
-                    }
-                )
             }
             Divider()
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                var syncThresholdField by remember { mutableStateOf(TextFieldValue("$syncThreshold ms")) }
+
                 Text("Sets of subtitles: ")
                 TextButton(
                     contentPadding = PaddingValues(0.dp),
@@ -89,6 +83,26 @@ fun App(parent: ComposePanel) {
                     Icon(Icons.Rounded.Add, contentDescription = "Add set")
                     Text("New")
                 }
+                Spacer(modifier = Modifier.weight(1.0f))
+                Text("Sync to: ")
+                ComboBox(
+                    data = subtitleSets,
+                    currentText = syncSet?.let {"Set ${it + 1}" },
+                    onItemSelected = { i, _ -> syncSet = i},
+                    modifier = Modifier.width(100.dp),
+                    nullOption = "None",
+                    converter = { i, _ -> "Set ${i+1}" })
+                Spacer(modifier = Modifier.width(10.dp))
+                Text("Threshold: ")
+                LineField(
+                    value = syncThresholdField,
+                    width = 80.dp,
+                    onValueChange = { newValue ->
+                        val result = intFilter(syncThresholdField, newValue, suffix = " ms", min = 0, max = 10000)
+                        syncThresholdField = result.first
+                        syncThreshold = result.second
+                    }
+                )
             }
 
             HorizontalListBox(modifier = Modifier.weight(1.0f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
