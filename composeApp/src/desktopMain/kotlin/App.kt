@@ -14,6 +14,7 @@ import component.HorizontalListBox
 import component.LineField
 import data.SubtitleSet
 import util.intFilter
+import util.selectFile
 import java.awt.Dimension
 import java.awt.event.ComponentEvent
 import java.awt.event.ComponentListener
@@ -39,7 +40,7 @@ fun App(parent: ComposePanel) {
 
     var panelDimension by remember { mutableStateOf(parent.size) }
 
-    var formatFilename by remember { mutableStateOf("") }
+    var formatFilename by remember { mutableStateOf<String?>(null) }
     var formatData by remember { mutableStateOf<SSAFile?>(null) }
 
     var syncThreshold by remember { mutableStateOf(TextFieldValue("500 ms")) }
@@ -63,17 +64,8 @@ fun App(parent: ComposePanel) {
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Text("Format file: ")
-                TextButton(onClick = {
-                    val dialog = JFileChooser()
-
-                    val result = dialog.showOpenDialog(parent)
-                    if (result == JFileChooser.APPROVE_OPTION)
-                        formatFilename = dialog.selectedFile.path
-                }) {
-                    if (formatFilename.isNotBlank())
-                        Text(formatFilename)
-                    else
-                        Text("Open file")
+                TextButton(onClick = { formatFilename = selectFile(parent) ?: formatFilename }) {
+                    Text(formatFilename ?: "Open file")
                 }
                 Spacer(modifier = Modifier.weight(1.0f))
                 Text("Sync threshold: ")
@@ -101,8 +93,8 @@ fun App(parent: ComposePanel) {
 
             HorizontalListBox(modifier = Modifier.weight(1.0f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 LaunchedEffect(formatFilename) {
-                    if (formatFilename.isNotBlank()) {
-                        FileReader(formatFilename).use { reader ->
+                    formatFilename?.let {
+                        FileReader(it).use { reader ->
                             val data = reader.readText()
                             val formatSSA = SSAParser.parse(data)
 

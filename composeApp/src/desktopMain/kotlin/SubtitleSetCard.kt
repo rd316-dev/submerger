@@ -30,7 +30,7 @@ import component.LineField
 import component.VerticalListBox
 import data.SubtitleSet
 import util.intFilter
-import javax.swing.JFileChooser
+import util.selectFiles
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -58,20 +58,16 @@ fun SubtitleSetCard(
                     Text("Set ${index + 1}")
                     Spacer(modifier = Modifier.weight(1.0f))
                     TextButton(onClick = {
-                        val dialog = JFileChooser()
-                        dialog.isMultiSelectionEnabled = true
-                        dialog.fileSelectionMode = JFileChooser.FILES_ONLY
-
-                        val result = dialog.showOpenDialog(parent)
-                        if (result != JFileChooser.APPROVE_OPTION)
+                        val selectedFiles = selectFiles(parent)
+                        if (selectedFiles.isEmpty())
                             return@TextButton
 
                         val present = HashSet<String>()
                         val newFiles = set.files.toMutableList()
                         present.addAll(set.files.filterNotNull())
-                        dialog.selectedFiles.forEach { f ->
-                            if (present.add(f.path))
-                                newFiles.add(f.path)
+                        selectedFiles.forEach { f ->
+                            if (present.add(f))
+                                newFiles.add(f)
                         }
 
                         onSetChanged(set.copy(files = newFiles))
