@@ -7,6 +7,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Delete
@@ -29,8 +30,10 @@ import component.ComboBox
 import component.LineField
 import component.VerticalListBox
 import data.SubtitleSet
+import util.FileDropTargetListener
 import util.intFilter
 import util.selectFiles
+import util.fileDragAndDrop
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -40,11 +43,9 @@ fun SubtitleSetCard(
     availableStyles: List<String>,
     parent: ComposePanel,
     modifier: Modifier = Modifier,
+    dndListener: FileDropTargetListener,
     onSetChanged: (SubtitleSet) -> Unit
 ) {
-    var selectedIndex by remember { mutableIntStateOf(-1) }
-    var offset by remember { mutableStateOf(TextFieldValue("${set.offset} ms")) }
-
     Column(modifier = modifier) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -53,43 +54,78 @@ fun SubtitleSetCard(
                 .weight(1.0f)
                 .fillMaxWidth()
         ) {
+            var selectedIndex by remember { mutableIntStateOf(-1) }
+            var dndPrompted by remember { mutableStateOf(false) }
+            var dndDragging by remember { mutableStateOf(false) }
+            var addedFiles by remember { mutableStateOf(emptyList<String>()) }
+
+            // have to keep it as a LaunchedEffect to have DnD working correctly
+            LaunchedEffect(addedFiles) {
+                if (addedFiles.isEmpty())
+                    return@LaunchedEffect
+
+                val present = HashSet<String>()
+                val newFiles = set.files.toMutableList()
+                present.addAll(set.files.filterNotNull())
+                addedFiles.forEach { f ->
+                    if (present.add(f))
+                        newFiles.add(f)
+                }
+
+                onSetChanged(set.copy(files = newFiles))
+                addedFiles = emptyList()
+            }
+
             Column (modifier = Modifier.weight(1.0f)) {
                 Row (verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                     Text("Set ${index + 1}")
                     Spacer(modifier = Modifier.weight(1.0f))
                     TextButton(onClick = {
-                        val selectedFiles = selectFiles(parent)
-                        if (selectedFiles.isEmpty())
-                            return@TextButton
-
-                        val present = HashSet<String>()
-                        val newFiles = set.files.toMutableList()
-                        present.addAll(set.files.filterNotNull())
-                        selectedFiles.forEach { f ->
-                            if (present.add(f))
-                                newFiles.add(f)
-                        }
-
-                        onSetChanged(set.copy(files = newFiles))
+                        addedFiles = selectFiles(parent)
                     }) {
                         Text("Add files")
                     }
                 }
                 VerticalListBox(
                     verticalArrangement = Arrangement.spacedBy(0.dp),
+                    isEmpty = set.files.isEmpty(),
                     modifier = Modifier
                         .border(2.dp, MaterialTheme.colors.primary, shape = RoundedCornerShape(3.dp))
                         .padding(5.dp)
                         .fillMaxWidth()
-                        .weight(1.0f),
-                    isEmpty = set.files.isEmpty(),
+                        .weight(1.0f)
+                        .background(if (!dndDragging) MaterialTheme.colors.background else MaterialTheme.colors.primary.copy(alpha = 0.3f))
+                        .fileDragAndDrop(keyValue = set,
+                            listener = dndListener,
+                            onDragStart = {
+                                dndDragging = true
+                            },
+                            onDragExit = {
+                                dndDragging = false
+                            },
+                            onPromptStart = {
+                                dndPrompted = true
+                            },
+                            onPromptEnd = {
+                                dndPrompted = false
+                            },
+                            onDrop = { value ->
+                                addedFiles = value.data.map { f -> f.toString() }
+                            },
+                            fileFilter = { file -> file.extension in arrayOf("srt", "ass", "ssa") }
+                        ),
                     emptyContent = {
                         Column(
                             modifier = Modifier.align(Alignment.Center).alpha(0.5f),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Icon(Icons.Outlined.Info, contentDescription = "Add files", Modifier.size(50.dp))
-                            Text("Add subtitle\nfiles here", textAlign = TextAlign.Center)
+                            if (dndPrompted) {
+                                Icon(Icons.Outlined.Add, contentDescription = "Drop files", Modifier.size(50.dp))
+                                Text("Drop subtitle\nfiles here", textAlign = TextAlign.Center)
+                            } else {
+                                Icon(Icons.Outlined.Info, contentDescription = "Add files", Modifier.size(50.dp))
+                                Text("Add subtitle\nfiles here", textAlign = TextAlign.Center)
+                            }
                         }
                     }
                 ) {
@@ -128,17 +164,24 @@ fun SubtitleSetCard(
                     }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    var offset by remember { mutableStateOf(TextFieldValue("${set.offset} ms")) }
+
+                    key(set) {
+                        if (offset.text != "${set.offset} ms")
+                            offset = TextFieldValue("${set.offset} ms")
+                    }
+
                     Text("Offset: ")
                     LineField(
                         value = offset,
                         width = 100.dp,
                         onValueChange = { newValue ->
+                            val oldOffset = offset
                             val newOffset = intFilter(offset, newValue, suffix = " ms")
 
-                            if (newOffset.first.text != offset.text) {
-                                offset = newOffset.first
+                            offset = newOffset.first
+                            if (newOffset.first.text != oldOffset.text)
                                 onSetChanged(set.copy(offset = newOffset.second))
-                            }
                         }
                     )
                     Spacer(modifier = Modifier.weight(1.0f))
