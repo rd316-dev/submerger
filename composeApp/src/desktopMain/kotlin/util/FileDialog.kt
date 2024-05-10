@@ -23,3 +23,12 @@ fun selectFile(parent: Component): String? {
     dialog.showOpenDialog(parent)
     return dialog.selectedFile?.path
 }
+
+fun selectFolder(parent: Component): String? {
+    val dialog = JFileChooser()
+    dialog.isMultiSelectionEnabled = false
+    dialog.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+
+    dialog.showOpenDialog(parent)
+    return dialog.selectedFile?.path
+}
