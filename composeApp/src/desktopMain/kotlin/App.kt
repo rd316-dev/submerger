@@ -173,6 +173,7 @@ fun App(parent: ComposePanel) {
                     syncThreshold = 500
                     syncSet = null
                     formatFilename = null
+                    outputFolder = null
 
                     subtitleSets.clear()
                     subtitleSets.add(SubtitleSet(
