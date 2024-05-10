@@ -3,10 +3,8 @@ SubMerger
 **Subtitle merging utility.**
 **Written in Kotlin and uses Compose Multiplatform for UI.**
 
-
 Usage
 -
----
 1. Import an SSA file that has styles. (e.g. the default 'format.ass' file that comes with the utility)
 2. Create your sets of subtitles and add files to each of them.
     > Supported subtitle file formats: **.srt .ssa .ass**
@@ -25,7 +23,6 @@ Usage
 
 Intent
 -
----
 Originally started as a personal Python CLI utility for merging Japanese and
 English subtitles together and display the English lines in the corner.
 
