@@ -8,6 +8,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposePanel
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import com.rd316.submerger.SubInfo
+import com.rd316.submerger.SubMerger
 import com.rd316.submerger.ssa.SSAFile
 import com.rd316.submerger.ssa.SSAParser
 import component.ComboBox
@@ -17,11 +19,15 @@ import data.SubtitleSet
 import util.FileDropTargetListener
 import util.intFilter
 import util.selectFile
+import util.selectFolder
 import java.awt.Dimension
 import java.awt.dnd.*
 import java.awt.event.ComponentEvent
 import java.awt.event.ComponentListener
 import java.io.FileReader
+import java.lang.IllegalArgumentException
+import java.nio.file.Paths
+import kotlin.io.path.name
 
 class ResizeListener(val onResize: (Dimension) -> Unit) : ComponentListener {
     override fun componentResized(e: ComponentEvent?) {
@@ -37,13 +43,15 @@ class ResizeListener(val onResize: (Dimension) -> Unit) : ComponentListener {
 
 @Composable
 fun App(parent: ComposePanel) {
-    val outerPadding = 20.dp
+    val outerPadding = 10.dp
     val setGap = 10.dp
 
     var panelDimension by remember { mutableStateOf(parent.size) }
 
     var formatFilename by remember { mutableStateOf<String?>(null) }
     var formatData by remember { mutableStateOf<SSAFile?>(null) }
+
+    var outputFolder by remember { mutableStateOf<String?>(null) }
 
     var syncSet by remember { mutableStateOf<Int?>(null) }
     var syncThreshold by remember { mutableIntStateOf(500) }
@@ -154,7 +162,12 @@ fun App(parent: ComposePanel) {
                 }
             }
             Divider()
-            Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("Output folder: ")
+                TextButton(onClick = { outputFolder = selectFolder(parent) }) {
+                    Text(outputFolder ?: "Choose folder")
+                }
+                Spacer(modifier = Modifier.weight(1.0f))
                 TextButton(onClick = {
                     formatFilename = null
                     syncThreshold = 500
@@ -169,7 +182,55 @@ fun App(parent: ComposePanel) {
                 }) {
                     Text("Clear")
                 }
-                Button(onClick = {}, enabled = !formatFilename.isNullOrBlank()) {
+                Button(
+                    enabled = !formatFilename.isNullOrBlank() && !outputFolder.isNullOrBlank(),
+                    onClick = {
+                        val info = ArrayList<ArrayList<SubInfo?>>()
+
+                        for (setIndex in subtitleSets.indices) {
+                            val set = subtitleSets[setIndex]
+
+                            for (fileIndex in set.files.indices) {
+                                val file = set.files[fileIndex]
+
+                                if (info.size <= fileIndex)
+                                    info.add(ArrayList())
+
+                                info[fileIndex].add(file?.let { SubInfo(
+                                    filename = file,
+                                    appliedStyle = set.style ?: formatData?.styles?.get(0)?.fields?.get("Name") ?: throw IllegalArgumentException("no styles"),
+                                    offsetMs = set.offset.toLong(),
+                                    syncOrigin = setIndex == syncSet
+                                )})
+                            }
+                        }
+
+                        for (fileRow in info) {
+                            val files = fileRow.filterNotNull()
+                            if (files.isEmpty())
+                                continue
+
+                            var filename: String = (files.find { f -> f.syncOrigin }?.filename ?: files[0].filename)
+
+                            if (filename.endsWith(".ssa"))
+                                filename = filename.removeSuffix(".ssa")
+                            else if (filename.endsWith(".ass"))
+                                filename = filename.removeSuffix(".ass")
+                            else if (filename.endsWith(".srt"))
+                                filename = filename.removeSuffix(".srt")
+
+                            filename = Paths.get("$filename.ass").name
+
+                            val outputFilename = Paths.get(outputFolder!!, filename).toAbsolutePath().toString()
+                            SubMerger().merge(
+                                formatFilename!!,
+                                outputFilename = outputFilename,
+                                syncThresholdMs=syncThreshold.toLong(),
+                                inputFiles=files
+                            )
+                        }
+                    }
+                ) {
                     Text("Convert")
                 }
             }
