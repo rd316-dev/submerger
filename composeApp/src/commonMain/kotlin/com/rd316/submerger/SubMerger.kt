@@ -23,7 +23,7 @@ class SubMerger {
 
         val maxSyncDelta = Duration.of(syncThresholdMs, ChronoUnit.MILLIS)
 
-        val syncOrigin = inputFiles.first { f -> f.syncOrigin }
+        val syncOrigin = inputFiles.firstOrNull { f -> f.syncOrigin }
         val startPositions = HashSet<LocalTime>()
         val endPositions = HashSet<LocalTime>()
 
