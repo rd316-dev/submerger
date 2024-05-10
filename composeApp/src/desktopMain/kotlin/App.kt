@@ -14,9 +14,11 @@ import component.ComboBox
 import component.HorizontalListBox
 import component.LineField
 import data.SubtitleSet
+import util.FileDropTargetListener
 import util.intFilter
 import util.selectFile
 import java.awt.Dimension
+import java.awt.dnd.*
 import java.awt.event.ComponentEvent
 import java.awt.event.ComponentListener
 import java.io.FileReader
@@ -56,6 +58,10 @@ fun App(parent: ComposePanel) {
     parent.addComponentListener(ResizeListener { dimension ->
         panelDimension = dimension
     })
+
+    val dndListener by remember { mutableStateOf(FileDropTargetListener()) }
+
+    parent.dropTarget = DropTarget(parent, dndListener)
 
     Row(modifier = Modifier.padding(outerPadding)) {
         Column(
@@ -122,11 +128,14 @@ fun App(parent: ComposePanel) {
                             formatData = formatSSA
                         }
                     }
+
+                    if (formatFilename == null) {
+                        formatData = null
+                    }
                 }
 
                 for (setIndex in subtitleSets.indices) {
                     val set = subtitleSets[setIndex]
-
                     val availableStyles = formatData?.styles?.map { s -> s.fields["Name"]!! } ?: emptyList()
 
                     SubtitleSetCard(
@@ -134,6 +143,7 @@ fun App(parent: ComposePanel) {
                         set = set,
                         availableStyles = availableStyles,
                         parent = parent,
+                        dndListener = dndListener,
                         modifier = Modifier
                             .width(((panelDimension.width.dp - setGap) / 2) - outerPadding)
                             .padding(bottom = 15.dp),
@@ -145,10 +155,21 @@ fun App(parent: ComposePanel) {
             }
             Divider()
             Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
-                TextButton(onClick = {}) {
+                TextButton(onClick = {
+                    formatFilename = null
+                    syncThreshold = 500
+                    syncSet = null
+                    formatFilename = null
+
+                    subtitleSets.clear()
+                    subtitleSets.add(SubtitleSet(
+                        files = emptyList(),
+                        offset = 0
+                    ))
+                }) {
                     Text("Clear")
                 }
-                Button(onClick = {}) {
+                Button(onClick = {}, enabled = !formatFilename.isNullOrBlank()) {
                     Text("Convert")
                 }
             }
