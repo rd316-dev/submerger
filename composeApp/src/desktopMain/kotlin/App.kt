@@ -140,6 +140,7 @@ fun App(parent: ComposePanel) {
 
                     SubtitleSetCard(
                         index = setIndex,
+                        setsCount = subtitleSets.size,
                         set = set,
                         availableStyles = availableStyles,
                         parent = parent,
@@ -147,9 +148,8 @@ fun App(parent: ComposePanel) {
                         modifier = Modifier
                             .width(((panelDimension.width.dp - setGap) / 2) - outerPadding)
                             .padding(bottom = 15.dp),
-                        onSetChanged = { newSet ->
-                            subtitleSets[setIndex] = newSet
-                        }
+                        onRemoveSet = { subtitleSets.removeAt(setIndex) },
+                        onSetChanged = { newSet -> subtitleSets[setIndex] = newSet }
                     )
                 }
             }

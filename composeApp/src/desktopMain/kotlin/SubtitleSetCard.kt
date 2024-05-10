@@ -39,12 +39,14 @@ import util.fileDragAndDrop
 @Composable
 fun SubtitleSetCard(
     index: Int,
+    setsCount: Int,
     set: SubtitleSet,
     availableStyles: List<String>,
     parent: ComposePanel,
     modifier: Modifier = Modifier,
     dndListener: FileDropTargetListener,
-    onSetChanged: (SubtitleSet) -> Unit
+    onRemoveSet: () -> Unit,
+    onSetChanged: (SubtitleSet) -> Unit,
 ) {
     Column(modifier = modifier) {
         Row(
@@ -79,6 +81,11 @@ fun SubtitleSetCard(
             Column (modifier = Modifier.weight(1.0f)) {
                 Row (verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                     Text("Set ${index + 1}")
+                    if (setsCount > 1) {
+                        TextButton(onClick = onRemoveSet) {
+                            Text("Remove")
+                        }
+                    }
                     Spacer(modifier = Modifier.weight(1.0f))
                     TextButton(onClick = {
                         addedFiles = selectFiles(parent)
