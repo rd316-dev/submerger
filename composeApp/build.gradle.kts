@@ -32,7 +32,7 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "com.rd316.submerger"
+            packageName = "SubMerger"
             packageVersion = "1.0.0"
         }
     }
