@@ -4,8 +4,9 @@ import com.rd316.submerger.srt.SubRipParser
 import com.rd316.submerger.ssa.SSAEvent
 import com.rd316.submerger.ssa.SSAFile
 import com.rd316.submerger.ssa.SSAParser
-import java.io.FileReader
+import java.io.File
 import java.io.FileWriter
+import java.io.InputStreamReader
 import java.time.Duration
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
@@ -14,7 +15,7 @@ import java.util.HashSet
 class SubMerger {
 
     fun merge(formatFilename: String, outputFilename: String, syncThresholdMs: Long = 0L, inputFiles: Iterable<SubInfo>) {
-        val format: SSAFile = FileReader(formatFilename).use { file ->
+        val format: SSAFile = InputStreamReader(File(formatFilename).inputStream(), Charsets.UTF_8).use { file ->
             val contents = file.readText()
             SSAParser.parse(contents)
         }
@@ -36,7 +37,7 @@ class SubMerger {
                 ?: throw IllegalArgumentException("${f.appliedStyle} is not present in format file")
 
             val fileEvents = ArrayList<SSAEvent>()
-            FileReader(f.filename).use { file ->
+            InputStreamReader(File(f.filename).inputStream(), Charsets.UTF_8).use { file ->
                 val contents = file.readText()
 
                 if (f.filename.endsWith(".ass") or f.filename.endsWith(".ssa")) {

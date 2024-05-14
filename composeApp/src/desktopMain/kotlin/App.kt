@@ -24,7 +24,8 @@ import java.awt.Dimension
 import java.awt.dnd.*
 import java.awt.event.ComponentEvent
 import java.awt.event.ComponentListener
-import java.io.FileReader
+import java.io.File
+import java.io.InputStreamReader
 import java.lang.IllegalArgumentException
 import java.nio.file.Paths
 import kotlin.io.path.name
@@ -122,7 +123,7 @@ fun App(parent: ComposePanel) {
             HorizontalListBox(modifier = Modifier.weight(1.0f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 LaunchedEffect(formatFilename) {
                     formatFilename?.let {
-                        FileReader(it).use { reader ->
+                        InputStreamReader(File(it).inputStream(), Charsets.UTF_8).use { reader ->
                             val data = reader.readText()
                             val formatSSA = SSAParser.parse(data)
 
