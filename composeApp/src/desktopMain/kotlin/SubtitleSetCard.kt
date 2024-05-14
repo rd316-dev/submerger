@@ -34,6 +34,7 @@ import util.FileDropTargetListener
 import util.intFilter
 import util.selectFiles
 import util.fileDragAndDrop
+import java.nio.file.Path
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -164,7 +165,7 @@ fun SubtitleSetCard(
                                         selectedIndex = if (isCurrentSelected) -1 else i
                                     })
                             ) {
-                                val fileName: String = filePath?.split("/")?.last() ?: "[ Blank ]"
+                                val fileName: String = filePath?.let { Path.of(it).fileName.toString() } ?: "[ Blank ]"
                                 Text(fileName, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
                         }
