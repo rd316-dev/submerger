@@ -11,6 +11,7 @@ import java.time.Duration
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.HashSet
+import java.util.logging.Logger
 
 class SubMerger {
 
@@ -39,6 +40,7 @@ class SubMerger {
             val fileEvents = ArrayList<SSAEvent>()
             InputStreamReader(File(f.filename).inputStream(), Charsets.UTF_8).use { file ->
                 val contents = file.readText()
+                Logger.getGlobal().info("Parsing ${f.filename}")
 
                 if (f.filename.endsWith(".ass") or f.filename.endsWith(".ssa")) {
                     val parsed = SSAParser.parse(contents)

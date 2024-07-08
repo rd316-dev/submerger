@@ -28,6 +28,7 @@ import java.io.File
 import java.io.InputStreamReader
 import java.lang.IllegalArgumentException
 import java.nio.file.Paths
+import java.util.logging.Logger
 import kotlin.io.path.name
 
 class ResizeListener(val onResize: (Dimension) -> Unit) : ComponentListener {
@@ -224,6 +225,7 @@ fun App(parent: ComposePanel) {
                             filename = Paths.get("$filename.ass").name
 
                             val outputFilename = Paths.get(outputFolder!!, filename).toAbsolutePath().toString()
+                            Logger.getGlobal().info("Merging files [${files.joinToString(prefix = "'", postfix="'")}]")
                             SubMerger().merge(
                                 formatFilename!!,
                                 outputFilename = outputFilename,
