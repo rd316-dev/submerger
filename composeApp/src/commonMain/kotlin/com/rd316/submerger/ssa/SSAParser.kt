@@ -2,6 +2,7 @@ package com.rd316.submerger.ssa
 
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.util.logging.Logger
 
 class SSAParser private constructor() {
     companion object {
@@ -70,6 +71,11 @@ class SSAParser private constructor() {
                 }
 
                 val firstColon = l.indexOfFirst { c -> c == ':' }
+
+                if (firstColon == -1) {
+                    Logger.getGlobal().info("Unable to find descriptor at line $lineNumber. Skipping")
+                    continue
+                }
 
                 val descriptor = l.substring(0, firstColon)
                 val value = l.substring(firstColon + 1, l.length).trim()
