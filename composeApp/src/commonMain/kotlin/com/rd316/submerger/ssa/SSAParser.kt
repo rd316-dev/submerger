@@ -1,5 +1,6 @@
 package com.rd316.submerger.ssa
 
+import java.lang.StringBuilder
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.logging.Logger
@@ -27,14 +28,25 @@ class SSAParser private constructor() {
         private fun parseEvent(line: String, format: List<String>): SSAEvent {
             val map = HashMap<String, String>()
 
-            val fields = line.split(",")
-            val fieldIterator = fields.iterator()
+            val fieldIterator = format.iterator()
 
-            for (fieldName in format) {
-                if (!fieldIterator.hasNext())
-                    throw IllegalArgumentException("Event field $fieldName not found")
+            var lineStartingPosition = 0
+            while (fieldIterator.hasNext()) {
+                val fieldName = fieldIterator.next()
 
-                map[fieldName] = fieldIterator.next()
+                val value = StringBuilder()
+
+                for (c in line.slice(lineStartingPosition until line.length)) {
+                    lineStartingPosition++
+
+                    // since we don't want to split the Text
+                    if (c == ',' && fieldName != "Text")
+                        break
+
+                    value.append(c)
+                }
+
+                map[fieldName] = value.toString()
             }
 
             return SSAEvent(
